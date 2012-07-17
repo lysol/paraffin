@@ -5,6 +5,8 @@ Object relational mappers are nice and all, but once you start abstracting away 
 
 This library's method of dealing with joins is to not deal with them.
 
+Only MySQL is supported at the moment, Postgres support coming soon.
+
 Usage
 -----
 
