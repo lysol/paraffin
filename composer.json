@@ -1,0 +1,24 @@
+{
+    "name": "paraffin/paraffin",
+    "type": "library",
+    "description": "ORM without the crap",
+    "keywords": ["database", "mysql", "PDO", "ORM"],
+    "homepage": "http://github.com/lysol/paraffin",
+    "license": "MIT",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "Derek Arnold",
+            "email": "zzzzbest@gmail.com",
+            "homepage": "http://derekarnold.net"
+        }
+    ],
+    "require": {
+        "php": ">=5.2.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Paraffin": "src"
+        }
+    }
+}
