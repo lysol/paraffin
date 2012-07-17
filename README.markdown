@@ -12,7 +12,7 @@ Assume `some_table` is a table with the columns `id int`, `name varchar(128)`, a
 
     class SomeTable extends Paraffin {
         public static $id_name = 'id';  // this is also the default
-      public static $table = 'some_table';
+        public static $table = 'some_table';
     }
   
     SomeTable::setPDOConnString("mysql:host=localhost;dbname=some_db")
@@ -50,20 +50,19 @@ Well that's nice. If you need to do more advanced logic, don't try to force some
         }
   
         public function makeDumb() {
-  		  $sth = $this->dbh->prepare("UPDATE `" . static::$table . "`" .
-  		  		" SET `type` = 'dumb' WHERE `id` = :id");
-  		  $sth->bindValue(':id', $this->id);
-  		  $sth->execute();
-  	  }
+			$sth = $this->dbh->prepare("UPDATE `" . static::$table . "`" .
+  	  	  		" SET `type` = 'dumb' WHERE `id` = :id");
+			$sth->bindValue(':id', $this->id);
+			$sth->execute();
+		}
   
-  	  public function friends() {
-  		  return DumbTable::where(array('another_id' => $this->id));
-  	  }
-  		  
+		public function friends() {
+  			return DumbTable::where(array('another_id' => $this->id));
+		}  
     }
   
     class DumbTable extends Paraffin {
-    	  public static $table = 'dumb_table';
+    	public static $table = 'dumb_table';
     }
 
 Just write PDO for the rest. The best reference for this library is the library itself.
