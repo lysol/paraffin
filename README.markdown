@@ -68,3 +68,15 @@ Well that's nice. If you need to do more advanced logic, don't try to force some
     }
 
 Just write PDO for the rest. The best reference for this library is the library itself.
+
+Caveats
+-------
+
+Because by default all PDO queries in class methods return instances of itself, in order to return arrays you'll need to set your fetch mode to FETCH_ASSOC first:
+
+    public function howMany() {
+        $sth = $this->dbh->prepare("SELECT count() FROM `" . static::$table . "`");
+        $sth->execute();
+        $sth->setFetchMode(PDO::FETCH_ASSOC);
+        ...
+    }
