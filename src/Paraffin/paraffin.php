@@ -127,27 +127,6 @@ class Paraffin extends ArrayObject {
 	}
 
 	/**
-	 * Extremely inefficient, cobbled together search query. You really should
-	 * be using a fulltext search.
-	 *
-	 * @param array $columns Columns to search over
-	 * @param mixed $terms Terms to search for
-	 */
-	public static function search($columns, $terms) {
-		$dbh = static::getInstance();
-		$col_com = implode(", ", $columns);
-		$cols = "UPPER(CONCAT($col_com))";
-		if (is_array($terms))
-			$terms = mysql_real_escape_string(implode(" ", $terms));
-		$search_clause = "$cols LIKE upper(\"%$terms%\")";
-		$q = sprintf("SELECT * FROM %s WHERE %s ORDER BY $col_com", 
-			static::$table, $search_clause);
-		$sth = $dbh->prepare($q);
-		$sth->execute();
-		return $sth->fetchAll();
-	}
-
-	/**
 	 * Find a record with the specified ID.
 	 *
 	 * @param mixed $id
