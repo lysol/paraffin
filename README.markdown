@@ -3,7 +3,7 @@ PARAFFIN
 
 Object relational mappers are nice and all, but once you start abstracting away table relationships, it becomes stupid real quick.
 
-This library's chosen method of dealing with is to not deal with them.
+This library's method of dealing with joins is to not deal with them.
 
 Usage
 -----
