@@ -19,6 +19,6 @@ class SPDOStatement extends \PDOStatement {
 	protected function __construct ($class=StdClass) {
 		$this->class = $class;
 		if ($class)
-			$this->setFetchMode(PDO::FETCH_CLASS, $this->class);
+			$this->setFetchMode(\PDO::FETCH_CLASS, $this->class);
 	}
 }
