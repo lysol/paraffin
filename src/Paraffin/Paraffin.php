@@ -1,31 +1,12 @@
 <?php
-
-/**
- * Statement class that sets its own fetch mode to the given class.
- * Used by the PDO object in the Paraffin class.
- */
-class SPDOStatement extends PDOStatement {
-
-	private $class;
-
-	/**
-	 * Constructor
-	 *
-	 * Set the class returned by this statement object.
-	 * @param mixed $class Class definition
-	 */
-	protected function __construct ($class=StdClass) {
-		$this->class = $class;
-		if ($class)
-			$this->setFetchMode(PDO::FETCH_CLASS, $this->class);
-	}
-}
+namespace Paraffin;
 
 /**
  * Main Paraffin class. Should not be used directly but subclassed so you can
  * provide more efficient queries for your logic.
  */
-class Paraffin extends ArrayObject {
+
+class Paraffin extends \ArrayObject {
 	/**
 	 * Database table this class will return records for
 	 *
@@ -102,14 +83,14 @@ class Paraffin extends ArrayObject {
 	 */
 	protected static function getInstance() {
 		if (!static::$connstring && !defined('PDO_CONNSTRING'))
-			throw new Exception("Please set a static connstring in the class " .
+			throw new \Exception("Please set a static connstring in the class " .
 				"or define PDO_CONNSTRING with a PDO connection string before " .
 				"instantiating this class.");
 		$cs = (static::$connstring) ? static::$connstring : PDO_CONNSTRING;
-		$dbh = new PDO($cs);
-		$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		$dbh->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_CLASS);
-		$dbh->setAttribute(PDO::ATTR_STATEMENT_CLASS, 
+		$dbh = new \PDO($cs);
+		$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+		$dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_CLASS);
+		$dbh->setAttribute(\PDO::ATTR_STATEMENT_CLASS, 
 			array('SPDOStatement', array(get_called_class())));
 		return $dbh;
 	}
@@ -186,7 +167,7 @@ class Paraffin extends ArrayObject {
 	protected static function currentDatabase() {
 		$dbh = static::getInstance();
 		$sth = $dbh->prepare("SELECT DATABASE() AS db");
-		$sth->setFetchMode(PDO::FETCH_ASSOC);
+		$sth->setFetchMode(\PDO::FETCH_ASSOC);
 		$sth->execute();
 		$row = $sth->fetch();
 		return $row['db'];
@@ -209,7 +190,7 @@ class Paraffin extends ArrayObject {
 				AND table_schema = :database");
 			$sth->bindValue(":table", static::$table);
 			$sth->bindValue(":database", $database);
-			$sth->setFetchMode(PDO::FETCH_ASSOC);
+			$sth->setFetchMode(\PDO::FETCH_ASSOC);
 			$sth->execute();
 			foreach($sth->fetchAll() as $row)
 				static::$_cached_cols[static::$table][] = $row['COLUMN_NAME'];
@@ -232,7 +213,7 @@ class Paraffin extends ArrayObject {
 				unset($values[$key]); 
 
 		if (count($values) == 0)
-			throw new Exception('No columns defined in query.');	  
+			throw new \Exception('No columns defined in query.');	  
 		return $values;
 	}
 
@@ -274,7 +255,7 @@ class Paraffin extends ArrayObject {
 		try {
 			$res = $sth->execute();
 		} catch (PDOException $e) {
-			throw new Exception("Encountered PDOException from query " .
+			throw new \Exception("Encountered PDOException from query " .
 				"\"$querystring\": " . $e->getMessage());
 		}
 		if ($res && $sth->rowCount()) {
@@ -302,9 +283,9 @@ class Paraffin extends ArrayObject {
 			" WHERE $sets_r");
 		foreach($values as $key => $value) {
 			if (is_int($value))
-				$datatype = PDO::PARAM_INT;
+				$datatype = \PDO::PARAM_INT;
 			else 
-				$datatype = PDO::PARAM_STR;
+				$datatype = \PDO::PARAM_STR;
 			$sth->bindValue(":$key", $value, $datatype);
 		}
 		$sth->execute();
@@ -394,9 +375,9 @@ class Paraffin extends ArrayObject {
 		$sth = $dbh->prepare($querystring);
 		foreach($values as $key => $value) {
 			if (is_int($value))
-				$datatype = PDO::PARAM_INT;
+				$datatype = \PDO::PARAM_INT;
 			else 
-				$datatype = PDO::PARAM_STR;
+				$datatype = \PDO::PARAM_STR;
 			if (!in_array($key, $nowCols))
 				$sth->bindValue(":$key", $value, $datatype);
 		}
