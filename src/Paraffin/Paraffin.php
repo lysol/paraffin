@@ -107,8 +107,14 @@ class Paraffin extends \ArrayObject {
 				"or define PDO_CONNSTRING with a PDO connection string before " .
 				"instantiating this class.");
 		$cs = (static::$connstring) ? static::$connstring : PDO_CONNSTRING;
-		$un = (static::$username) ? static::$username : PDO_USERNAME;
-		$pw = (static::$password) ? static::$password : PDO_PASSWORD;
+		$un = static::$username;
+		if (!$un && defined('PDO_USERNAME')) {
+			$un = PDO_USERNAME;
+		}
+		$pw = static::$password;
+		if (!$un && defined('PDO_PASSWORD')) {
+			$un = PDO_PASSWORD;
+		}
 		$dbh = new \PDO($cs, $un, $pw);
 		$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		$dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_CLASS);
