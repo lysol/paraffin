@@ -67,6 +67,20 @@ class Paraffin extends ArrayObject {
 	protected static $connstring = null;
 
 	/**
+	 * The PDO connection username. 
+	 *
+	 * @var string $username
+	 */
+	protected static $username = null;
+
+	/**
+	 * The PDO connection password. 
+	 *
+	 * @var string $password
+	 */
+	protected static $password = null;
+
+	/**
 	 * The PDO connection object instance for this
 	 * class.
 	 *
@@ -78,20 +92,26 @@ class Paraffin extends ArrayObject {
 	 * Exactly what it says on the tin.
 	 *
 	 * @param string $connstring PDO connection string 
+	 * @param string $username PDO connection username
+	 * @param string $password PDO connection password
 	 */
-	public static function setPDOConnString($connstring) {
+	public static function setPDOConnString($connstring, $username=null, $password=null) {
 		if (!$connstring)
 			return;
 		static::$connstring = $connstring;
+		static::$username = $username;
+		static::$password = $password;
 	}
 
 	/**
 	 * Constructor
 	 *
 	 * @param string $connstring @see function setPDOConnString
+	 * @param string $username @see function setPDOConnString
+	 * @param string $password @see function setPDOConnString
 	 */
-	public function __construct($connstring=null) {
-		static::setPDOConnString($connstring);
+	public function __construct($connstring=null, $username=null, $password=null) {
+		static::setPDOConnString($connstring, $username, $password);
 		$dbh = static::getInstance();
 		$this->dbh = $dbh;
 	}
@@ -106,7 +126,9 @@ class Paraffin extends ArrayObject {
 				"or define PDO_CONNSTRING with a PDO connection string before " .
 				"instantiating this class.");
 		$cs = (static::$connstring) ? static::$connstring : PDO_CONNSTRING;
-		$dbh = new PDO($cs);
+		$un = (static::$username) ? static::$username : PDO_USERNAME;
+		$pw = (static::$password) ? static::$password : PDO_PASSWORD;
+		$dbh = new PDO($cs, $un, $pw);
 		$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$dbh->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_CLASS);
 		$dbh->setAttribute(PDO::ATTR_STATEMENT_CLASS, 
