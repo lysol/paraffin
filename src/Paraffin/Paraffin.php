@@ -119,7 +119,7 @@ class Paraffin extends \ArrayObject {
 		$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		$dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_CLASS);
 		$dbh->setAttribute(\PDO::ATTR_STATEMENT_CLASS, 
-			array('SPDOStatement', array(get_called_class())));
+			array('Parrafin\SPDOStatement', array(get_called_class())));
 		return $dbh;
 	}
 
