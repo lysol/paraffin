@@ -1,11 +1,12 @@
 PARAFFIN
 --------
 
-Object relational mappers are nice and all, but once you start abstracting away table relationships, it becomes stupid real quick.
+Full-fledged ORM is a gnarly beast. This is a pretty simply library, that
+just provides some work-alike features and a pattern for writing object-oriented
+database code. Joins, subqueries, and arbitrary queries are written within
+static methods which return instances of the surrounding class.
 
-This library's method of dealing with joins is to not deal with them.
-
-Only MySQL is supported at the moment, Postgres support coming soon.
+Only MySQL is supported at the moment, Postgres support coming someday.
 
 Usage
 -----

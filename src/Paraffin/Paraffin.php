@@ -67,7 +67,7 @@ class Paraffin extends \ArrayObject {
 	 *
 	 * @var PDO $dbh 
 	 */
-	protected $dbh = null;
+	protected static $dbh = null;
 
 	/**
 	 * Exactly what it says on the tin.
@@ -76,12 +76,16 @@ class Paraffin extends \ArrayObject {
 	 * @param string $username PDO connection username
 	 * @param string $password PDO connection password
 	 */
-	public static function setPDOConnString($connstring, $username=null, $password=null) {
+	public static function setPDOConnString($connstring, $username=null, $password=null,
+		$setInstance=true) {
 		if (!$connstring)
 			return;
 		static::$connstring = $connstring;
 		static::$username = $username;
 		static::$password = $password;
+		if ($setInstance) {
+			static::setInstance();
+		}
 	}
 
 	/**
@@ -93,15 +97,33 @@ class Paraffin extends \ArrayObject {
 	 */
 	public function __construct($connstring=null, $username=null, $password=null) {
 		static::setPDOConnString($connstring, $username, $password);
-		$dbh = static::getInstance();
-		$this->dbh = $dbh;
+		static::setInstance();
+	}
+
+	/**
+	 * Set the statement return class and other options for this object.
+	 */
+	public static function fixate() {
+		static::$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+		static::$dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_CLASS);
+		static::$dbh->setAttribute(\PDO::ATTR_STATEMENT_CLASS, 
+			array('Paraffin\SPDOStatement', array(get_called_class())));
+	}
+
+	public static function setDBHandle($dbh) {
+		static::fixate();
+		static::$dbh = $dbh;
 	}
 
 	/**
 	 * Create a new PDO connection object and return it
 	 * @return PDO
 	 */
-	protected static function getInstance() {
+	protected static function setInstance() {
+		if (static::$dbh !== null) {
+			static::fixate();
+			return;
+		}
 		if (!static::$connstring && !defined('PDO_CONNSTRING'))
 			throw new \Exception("Please set a static connstring in the class " .
 				"or define PDO_CONNSTRING with a PDO connection string before " .
@@ -116,11 +138,8 @@ class Paraffin extends \ArrayObject {
 			$un = PDO_PASSWORD;
 		}
 		$dbh = new \PDO($cs, $un, $pw);
-		$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-		$dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_CLASS);
-		$dbh->setAttribute(\PDO::ATTR_STATEMENT_CLASS, 
-			array('Parrafin\SPDOStatement', array(get_called_class())));
-		return $dbh;
+		static::$dbh = $dbh;
+		static::fixate();
 	}
 
 	/**
@@ -129,7 +148,7 @@ class Paraffin extends \ArrayObject {
 	 * @param string $colName The column name in the table for this class
 	 */ 
 	public function makeNow($colName) {
-		if (!in_array($colName, $this->_columns()))
+		if (!in_array($colName, static::_columns()))
 			return false;
 		if (!in_array($colName, $this->nowCols))
 			$this->nowCols[] = $colName;
@@ -142,8 +161,8 @@ class Paraffin extends \ArrayObject {
 	 * @return bool
 	 */
 	public static function exists($id) {
-		$dbh = static::getInstance();		
-		$sth = $dbh->prepare(sprintf("SELECT TRUE FROM %s WHERE %s = :id", 
+		static::fixate();
+		$sth = static::$dbh->prepare(sprintf("SELECT TRUE FROM %s WHERE %s = :id", 
 			static::$table, static::$id_name));
 		$sth->bindValue(":id", $id);
 		$sth->execute();
@@ -157,10 +176,9 @@ class Paraffin extends \ArrayObject {
 	 * @return bool
 	 */
 	public function delete() {
-		$dbh = static::getInstance();		
-		$sth = $dbh->prepare("DELETE FROM " . static::$table . " WHERE " . 
+		$sth = static::$dbh->prepare("DELETE FROM " . static::$table . " WHERE " . 
 			static::$id_name . " = :id");
-		$sth->bindValue(":id", $this->{$class::$id_name});
+		$sth->bindValue(":id", $this->{static::$id_name});
 		return $sth->execute();
 	}
 
@@ -168,7 +186,6 @@ class Paraffin extends \ArrayObject {
 	 * Save the current record instance.
 	 */
 	public function save() {
-		$dbh = static::getInstance();		
 		$_cols = static::_columns();
 		$values = array();
 		foreach($_cols as $col) {
@@ -184,7 +201,7 @@ class Paraffin extends \ArrayObject {
 	 */
 	public function columns() {
 		// well this needs a refactor now
-		return $this->_columns();
+		return static::_columns();
 	}
 
 	/**
@@ -193,8 +210,7 @@ class Paraffin extends \ArrayObject {
 	 * @return string
 	 */
 	protected static function currentDatabase() {
-		$dbh = static::getInstance();
-		$sth = $dbh->prepare("SELECT DATABASE() AS db");
+		$sth = static::$dbh->prepare("SELECT DATABASE() AS db");
 		$sth->setFetchMode(\PDO::FETCH_ASSOC);
 		$sth->execute();
 		$row = $sth->fetch();
@@ -206,12 +222,11 @@ class Paraffin extends \ArrayObject {
 	 *
 	 * @return array
 	 */
-	private function _columns() {
-		if (!array_key_exists($class::$table, $class::$_cached_cols)) {
+	private static function _columns() {
+		if (!array_key_exists(static::$table, static::$_cached_cols)) {
 			$database = static::currentDatabase();
 			static::$_cached_cols[static::$table] = array();
-			$dbh = static::getInstance();		
-			$sth = $dbh->prepare("
+			$sth = static::$dbh->prepare("
 				SELECT COLUMN_NAME
 				FROM INFORMATION_SCHEMA.COLUMNS
 				WHERE table_name = :table
@@ -232,7 +247,7 @@ class Paraffin extends \ArrayObject {
 	 * @param array $values
 	 * @return array
 	 */
-	protected function _filterColumns($values) {
+	protected static function _filterColumns($values) {
 		$vkeys = array_keys($values);
 		$cols = static::_columns();
 		// Remove array keys not in the actual table field set
@@ -254,11 +269,10 @@ class Paraffin extends \ArrayObject {
 	 */
 	public function update($values) {
 		$this->save_version();
-		$values = $this->_filterColumns($values);
-		$dbh = static::getInstance();		
+		$values = static::_filterColumns($values);
 		if (!isset($this->{static::$id_name})) {
 			// If no ID, create it first.
-			$vals = $this->_filterColumns($values);
+			$vals = static::_filterColumns($values);
 			static::create($vals, true, $this->nowCols);
 			foreach($vals as $key => $val)
 				$this->{$key} = $val;
@@ -274,7 +288,7 @@ class Paraffin extends \ArrayObject {
 		$setpart_r = implode(',', $setpart);
 		$querystring = "UPDATE " . static::$table . " SET $setpart_r WHERE `" . 
 			static::$id_name . "` = :__id";
-		$sth = $dbh->prepare("UPDATE " . static::$table . 
+		$sth = static::$dbh->prepare("UPDATE " . static::$table . 
 			" SET $setpart_r WHERE `" . static::$id_name . "` = :__id");
 		$sth->bindValue(":__id", $this->{static::$id_name});
 		foreach($values as $key => $val)
@@ -302,12 +316,12 @@ class Paraffin extends \ArrayObject {
 	 * @param bool $one Only return one record if true
 	 */
 	public static function where($values, $one=false) {
-		$dbh = static::getInstance();		
+		static::fixate();
 		$sets = array();
 		foreach(array_keys($values) as $key)
 			$sets[] = "`$key` = :$key";
 		$sets_r = implode(" AND ", $sets);
-		$sth = $dbh->prepare("SELECT * FROM " . static::$table .
+		$sth = static::$dbh->prepare("SELECT * FROM " . static::$table .
 			" WHERE $sets_r");
 		foreach($values as $key => $value) {
 			if (is_int($value))
@@ -329,8 +343,8 @@ class Paraffin extends \ArrayObject {
 	 * @return array
 	 */
 	public static function all() {
-		$dbh = static::getInstance();		
-		$sth = $dbh->prepare("SELECT * FROM " . static::$table);
+		static::fixate();
+		$sth = static::$dbh->prepare("SELECT * FROM " . static::$table);
 		$sth->execute();
 		return $sth->fetchAll();				
 	}
@@ -342,8 +356,8 @@ class Paraffin extends \ArrayObject {
 	 * @return mixed
 	 */
 	public static function get($id) {
-		$dbh = static::getInstance();		
-		$sth = $dbh->prepare("SELECT * FROM " . static::$table . " WHERE " .
+		static::fixate();
+		$sth = static::$dbh->prepare("SELECT * FROM " . static::$table . " WHERE " .
 			static::$id_name . " = :id");
 		$sth->bindValue(":id", $id);
 		$sth->execute();
@@ -358,12 +372,12 @@ class Paraffin extends \ArrayObject {
 	 * @return array
 	 */
 	public static function getMany($ids=array()) {
+		static::fixate();
 		if (count($ids) == 0)
 			return array();
-		$dbh = static::getInstance();		
 		$makeitso = function($item) { return (int)$item; };
 		array_walk($ids, $makeitso);
-		$sth = $dbh->prepare("SELECT * FROM " . static::$table . " WHERE " .
+		$sth = static::$dbh->prepare("SELECT * FROM " . static::$table . " WHERE " .
 			static::$id_name . " IN (" . implode(',', $ids) . ")");
 		$sth->execute();
 		return $sth->fetchAll();		
@@ -379,6 +393,7 @@ class Paraffin extends \ArrayObject {
 	 */
 	public static function create($values, $save=true, $nowCols=array(),
 		$table=null) {
+		static::fixate();
 		$values = static::_filterColumns($values);
 		if (!$table)
 			$table = static::$table;
@@ -389,7 +404,6 @@ class Paraffin extends \ArrayObject {
 				$instance->{$key} = $value;
 			return $instance;
 		}	 
-		$dbh = static::getInstance();		
 		$sets = array();
 		foreach(array_keys($values) as $key)
 			if (!in_array($key, $nowCols))
@@ -400,7 +414,7 @@ class Paraffin extends \ArrayObject {
 		$vals_built = implode(", ", $sets);
 		$querystring = "INSERT INTO $table ($names_built) VALUES " .
 			"($vals_built)";
-		$sth = $dbh->prepare($querystring);
+		$sth = static::$dbh->prepare($querystring);
 		foreach($values as $key => $value) {
 			if (is_int($value))
 				$datatype = \PDO::PARAM_INT;
@@ -412,9 +426,9 @@ class Paraffin extends \ArrayObject {
 		$res = $sth->execute();
 
 		if ($res && $sth->rowCount() == 1) {
-			$sth = $dbh->prepare("SELECT * FROM $table WHERE " .
+			$sth = static::$dbh->prepare("SELECT * FROM $table WHERE " .
 				static::$id_name . " = :id");
-			$sth->bindValue(":id", $dbh->lastInsertId());
+			$sth->bindValue(":id", static::$dbh->lastInsertId());
 			$sth->execute();
 			return $sth->fetch();
 		} else {
