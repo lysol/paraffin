@@ -428,7 +428,11 @@ class Paraffin extends \ArrayObject {
 		if ($res && $sth->rowCount() == 1) {
 			$sth = static::$dbh->prepare("SELECT * FROM $table WHERE " .
 				static::$id_name . " = :id");
-			$sth->bindValue(":id", static::$dbh->lastInsertId());
+			if (array_key_exists(static::$id_name, $values)) {
+				$sth->bindValue(":id", $values[static::$id_name]);
+			} else {
+				$sth->bindValue(":id", static::$dbh->lastInsertId());
+			}
 			$sth->execute();
 			return $sth->fetch();
 		} else {
