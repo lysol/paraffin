@@ -1,8 +1,8 @@
 PARAFFIN
 --------
 
-Full-fledged ORM is a gnarly beast. This is a pretty simply library, that
-just provides some work-alike features and a pattern for writing object-oriented
+Full-fledged ORM is a gnarly beast. This is a pretty simple library, that
+provides some work-alike features and a pattern for writing object-oriented
 database code. Joins, subqueries, and arbitrary queries are written within
 static methods which return instances of the surrounding class.
 
@@ -13,31 +13,31 @@ Usage
 
 Assume `some_table` is a table with the columns `id int`, `name varchar(128)`, and `active tinyint`.
 
-    class SomeTable extends Paraffin {
+    class TheTable extends Paraffin {
         public static $id_name = 'id';  // this is also the default
-        public static $table = 'some_table';
+        public static $table = 'the_table';
     }
   
-    SomeTable::setPDOConnString("mysql:host=localhost;dbname=some_db")
+    TheTable::setPDOConnString("mysql:host=localhost;dbname=some_db")
   
-    $someRow = SomeTable::get(2);  // get record with id 2
+    $someRow = TheTable::get(2);  // get record with id 2
     $someRow->name = 'AnotherValue';
     $someRow->save();
   
-    $anotherRow = SomeTable::create(array(
+    $anotherRow = TheTable::create(array(
         'name' => 'friend',
         'active' => 1
         ));
   
     $anotherRow->delete();
   
-    $moreRecords = SomeTable::getMany(array(1,2,3,4));
+    $moreRecords = TheTable::getMany(array(1,2,3,4));
   
-    $allOfTheRecords = SomeTable::all();
+    $allOfTheRecords = TheTable::all();
   
-    $stupids = SomeTable::where(array('name' => 'stupid'));
+    $people = TheTable::where(array('name' => 'person'));
   
-    $stupids[0]->update(array('name' => 'smart'));
+    $people[0]->update(array('name' => 'smart'));
 
 Well that's nice. If you need to do more advanced logic, don't try to force some annoying construct onto it, just write SQL.
 
@@ -52,20 +52,20 @@ Well that's nice. If you need to do more advanced logic, don't try to force some
             return $sth->fetchAll();
         }
   
-        public function makeDumb() {
+        public function makeYetAnother() {
 			$sth = $this->dbh->prepare("UPDATE `" . static::$table . "`" .
-  	  	  		" SET `type` = 'dumb' WHERE `id` = :id");
+  	  	  		" SET `type` = 'yet_another' WHERE `id` = :id");
 			$sth->bindValue(':id', $this->id);
 			$sth->execute();
 		}
   
 		public function friends() {
-  			return DumbTable::where(array('another_id' => $this->id));
+  			return YetAnotherTable::where(array('another_id' => $this->id));
 		}  
     }
   
-    class DumbTable extends Paraffin {
-    	public static $table = 'dumb_table';
+    class YetAnotherTable extends Paraffin {
+    	public static $table = 'yet_another_table';
     }
 
 Just write PDO for the rest. The best reference for this library is the library itself.

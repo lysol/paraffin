@@ -268,7 +268,6 @@ class Paraffin extends \ArrayObject {
 	 * @return bool
 	 */
 	public function update($values) {
-		$this->save_version();
 		$values = static::_filterColumns($values);
 		if (!isset($this->{static::$id_name})) {
 			// If no ID, create it first.
