@@ -218,6 +218,14 @@ class Paraffin extends \ArrayObject {
 	}
 
 	/**
+	 * Clear the cached column list, invalidating the cached local values
+	 *
+	 */
+	public static function resetCache() {
+		static::$_cached_cols = array();
+	}
+
+	/**
 	 * Return the list of columns from INFORMATION_SCHEMA
 	 *
 	 * @return array
@@ -235,8 +243,9 @@ class Paraffin extends \ArrayObject {
 			$sth->bindValue(":database", $database);
 			$sth->setFetchMode(\PDO::FETCH_ASSOC);
 			$sth->execute();
-			foreach($sth->fetchAll() as $row)
+			foreach($sth->fetchAll() as $row) {
 				static::$_cached_cols[static::$table][] = $row['COLUMN_NAME'];
+			}
 		}
 		return static::$_cached_cols[static::$table];
 	}
