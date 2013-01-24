@@ -51,6 +51,17 @@ class TestParaffin extends \UnitTestCase {
 		$this->assertTrue(get_class($focus) == 'Vehicle');
 	}
 
+	function testWhere() {
+		$user = User::create(array('name' => 'HurfDurf'));
+		$this->assertTrue(User::where(array('name' => 'HurfDurf')));
+	}
+
+	function testDelete() {
+		$user = User::create(array('name' => 'redshirt'));
+		$user->delete();
+		$this->assertFalse(User::where(array('name' => 'redshirt')));
+	}
+
 	function tearDown() {
 		$sth = $this->dbh->prepare("DROP TABLE users;");
 		$sth->execute();

@@ -16,8 +16,8 @@ class Paraffin extends \ArrayObject {
 
 	/**
 	 * Column name that holds the primary key for the table
-	 * Assumed generally to be an auto incrementing numeric, but there's no 
-	 * reason you can't use natural or other keys with this library, as long as 
+	 * Assumed generally to be an auto incrementing numeric, but there's no
+	 * reason you can't use natural or other keys with this library, as long as
 	 * you write your own logic to create key values.
 	 *
 	 * @var string $id_name
@@ -48,41 +48,41 @@ class Paraffin extends \ArrayObject {
 	protected static $connstring = null;
 
 	/**
-	 * The PDO connection username. 
+	 * The PDO connection username.
 	 *
-	 * @var string $username
+	 * @var string $__username
 	 */
-	protected static $username = null;
+	protected static $__username = null;
 
 	/**
-	 * The PDO connection password. 
+	 * The PDO connection password.
 	 *
-	 * @var string $password
+	 * @var string $__password
 	 */
-	protected static $password = null;
+	protected static $__password = null;
 
 	/**
 	 * The PDO connection object instance for this
 	 * class.
 	 *
-	 * @var PDO $dbh 
+	 * @var PDO $dbh
 	 */
 	protected static $dbh = null;
 
 	/**
 	 * Exactly what it says on the tin.
 	 *
-	 * @param string $connstring PDO connection string 
-	 * @param string $username PDO connection username
-	 * @param string $password PDO connection password
+	 * @param string $connstring PDO connection string
+	 * @param string $__username PDO connection username
+	 * @param string $__password PDO connection password
 	 */
-	public static function setPDOConnString($connstring, $username=null, $password=null,
+	public static function setPDOConnString($connstring, $__username=null, $__password=null,
 		$setInstance=true) {
 		if (!$connstring)
 			return;
 		static::$connstring = $connstring;
-		static::$username = $username;
-		static::$password = $password;
+		static::$__username = $__username;
+		static::$__password = $__password;
 		if ($setInstance) {
 			static::setInstance();
 		}
@@ -92,11 +92,11 @@ class Paraffin extends \ArrayObject {
 	 * Constructor
 	 *
 	 * @param string $connstring @see function setPDOConnString
-	 * @param string $username @see function setPDOConnString
-	 * @param string $password @see function setPDOConnString
+	 * @param string $__username @see function setPDOConnString
+	 * @param string $__password @see function setPDOConnString
 	 */
-	public function __construct($connstring=null, $username=null, $password=null) {
-		static::setPDOConnString($connstring, $username, $password);
+	public function __construct($connstring=null, $__username=null, $__password=null) {
+		static::setPDOConnString($connstring, $__username, $__password);
 		static::setInstance();
 	}
 
@@ -106,7 +106,7 @@ class Paraffin extends \ArrayObject {
 	public static function fixate() {
 		static::$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		static::$dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_CLASS);
-		static::$dbh->setAttribute(\PDO::ATTR_STATEMENT_CLASS, 
+		static::$dbh->setAttribute(\PDO::ATTR_STATEMENT_CLASS,
 			array('Paraffin\SPDOStatement', array(get_called_class())));
 	}
 
@@ -129,11 +129,11 @@ class Paraffin extends \ArrayObject {
 				"or define PDO_CONNSTRING with a PDO connection string before " .
 				"instantiating this class.");
 		$cs = (static::$connstring) ? static::$connstring : PDO_CONNSTRING;
-		$un = static::$username;
+		$un = static::$__username;
 		if (!$un && defined('PDO_USERNAME')) {
 			$un = PDO_USERNAME;
 		}
-		$pw = static::$password;
+		$pw = static::$__password;
 		if (!$un && defined('PDO_PASSWORD')) {
 			$un = PDO_PASSWORD;
 		}
@@ -146,7 +146,7 @@ class Paraffin extends \ArrayObject {
 	 * Set a column to be set to NOW() in the subsequent database query.
 	 *
 	 * @param string $colName The column name in the table for this class
-	 */ 
+	 */
 	public function makeNow($colName) {
 		if (!in_array($colName, static::_columns()))
 			return false;
@@ -162,7 +162,7 @@ class Paraffin extends \ArrayObject {
 	 */
 	public static function exists($id) {
 		static::fixate();
-		$sth = static::$dbh->prepare(sprintf("SELECT TRUE FROM %s WHERE %s = :id", 
+		$sth = static::$dbh->prepare(sprintf("SELECT TRUE FROM %s WHERE %s = :id",
 			static::$table, static::$id_name));
 		$sth->bindValue(":id", $id);
 		$sth->execute();
@@ -176,7 +176,7 @@ class Paraffin extends \ArrayObject {
 	 * @return bool
 	 */
 	public function delete() {
-		$sth = static::$dbh->prepare("DELETE FROM " . static::$table . " WHERE " . 
+		$sth = static::$dbh->prepare("DELETE FROM " . static::$table . " WHERE " .
 			static::$id_name . " = :id");
 		$sth->bindValue(":id", $this->{static::$id_name});
 		return $sth->execute();
@@ -196,7 +196,7 @@ class Paraffin extends \ArrayObject {
 
 	/**
 	 * Return the cached columns for this instance
-	 * 
+	 *
 	 * @return array
 	 */
 	public function columns() {
@@ -238,7 +238,8 @@ class Paraffin extends \ArrayObject {
 				SELECT COLUMN_NAME
 				FROM INFORMATION_SCHEMA.COLUMNS
 				WHERE table_name = :table
-				AND table_schema = :database");
+				AND table_schema = :database
+				ORDER BY `ORDINAL_POSITION`");
 			$sth->bindValue(":table", static::$table);
 			$sth->bindValue(":database", $database);
 			$sth->setFetchMode(\PDO::FETCH_ASSOC);
@@ -262,10 +263,10 @@ class Paraffin extends \ArrayObject {
 		// Remove array keys not in the actual table field set
 		foreach($vkeys as $key)
 			if (!in_array($key, $cols))
-				unset($values[$key]); 
+				unset($values[$key]);
 
 		if (count($values) == 0)
-			throw new \Exception('No columns defined in query.');	  
+			throw new \Exception('No columns defined in query.');
 		return $values;
 	}
 
@@ -291,12 +292,12 @@ class Paraffin extends \ArrayObject {
 			if (!in_array($key, $this->nowCols))
 				$setpart[] = sprintf("`%s` = :%s", $key, $key);
 			else
-				$setpart[] = sprintf("`%s` = NOW()");
+				$setpart[] = sprintf("`%s` = NOW()", $key);
 
 		$setpart_r = implode(',', $setpart);
-		$querystring = "UPDATE " . static::$table . " SET $setpart_r WHERE `" . 
+		$querystring = "UPDATE " . static::$table . " SET $setpart_r WHERE `" .
 			static::$id_name . "` = :__id";
-		$sth = static::$dbh->prepare("UPDATE " . static::$table . 
+		$sth = static::$dbh->prepare("UPDATE " . static::$table .
 			" SET $setpart_r WHERE `" . static::$id_name . "` = :__id");
 		$sth->bindValue(":__id", $this->{static::$id_name});
 		foreach($values as $key => $val)
@@ -334,7 +335,7 @@ class Paraffin extends \ArrayObject {
 		foreach($values as $key => $value) {
 			if (is_int($value))
 				$datatype = \PDO::PARAM_INT;
-			else 
+			else
 				$datatype = \PDO::PARAM_STR;
 			$sth->bindValue(":$key", $value, $datatype);
 		}
@@ -354,7 +355,7 @@ class Paraffin extends \ArrayObject {
 		static::fixate();
 		$sth = static::$dbh->prepare("SELECT * FROM " . static::$table);
 		$sth->execute();
-		return $sth->fetchAll();				
+		return $sth->fetchAll();
 	}
 
 	/**
@@ -388,7 +389,7 @@ class Paraffin extends \ArrayObject {
 		$sth = static::$dbh->prepare("SELECT * FROM " . static::$table . " WHERE " .
 			static::$id_name . " IN (" . implode(',', $ids) . ")");
 		$sth->execute();
-		return $sth->fetchAll();		
+		return $sth->fetchAll();
 	}
 
 	/**
@@ -411,7 +412,7 @@ class Paraffin extends \ArrayObject {
 			foreach($values as $key => $value)
 				$instance->{$key} = $value;
 			return $instance;
-		}	 
+		}
 		$sets = array();
 		foreach(array_keys($values) as $key)
 			if (!in_array($key, $nowCols))
@@ -426,7 +427,7 @@ class Paraffin extends \ArrayObject {
 		foreach($values as $key => $value) {
 			if (is_int($value))
 				$datatype = \PDO::PARAM_INT;
-			else 
+			else
 				$datatype = \PDO::PARAM_STR;
 			if (!in_array($key, $nowCols))
 				$sth->bindValue(":$key", $value, $datatype);
@@ -448,4 +449,25 @@ class Paraffin extends \ArrayObject {
 		}
 	}
 
+	/*
+	 * Simple interface for generating a simple array of values
+	 *
+	 * @return array
+	 */
+	public function toArray() {
+		$columns = static::_columns();
+		$arr = array();
+		foreach($columns as $col) {
+			$arr[$col] = $this->{$col};
+		}
+		return $arr;
+	}
+
+	/*
+	 * Empty the table.
+	 */
+	public static function truncate() {
+		static::fixate();
+		static::$dbh->query("TRUNCATE TABLE `" . static::$table . "`");
+	}
 }
