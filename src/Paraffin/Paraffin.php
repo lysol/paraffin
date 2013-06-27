@@ -305,7 +305,7 @@ class Paraffin extends \ArrayObject {
 				$sth->bindValue(":$key", $val);
 		try {
 			$res = $sth->execute();
-		} catch (PDOException $e) {
+		} catch (\PDOException $e) {
 			throw new \Exception("Encountered PDOException from query " .
 				"\"$querystring\": " . $e->getMessage());
 		}
@@ -393,6 +393,28 @@ class Paraffin extends \ArrayObject {
 	}
 
 	/**
+	 * Attempt to create a new instance, falling back to an update if
+	 * an integrity error occurs.
+	 * @param array $values
+	 *
+	 * @return Paraffin
+	 */
+	public static function upsert($values) {
+		try {
+			$res = static::create($values);
+			return $res;
+		} catch (\PDOException $e) {
+			if ($e->getCode() == 23000) {
+				// integrity error, update instead.
+				$instance = static::get($values[static::$id_name]);
+				unset($values[static::$id_name]);
+				$instance->update($values);
+				return $instance;
+			}
+		}
+	}
+
+	/**
 	 * Create a new instance. By default, it will also insert a new record.
 	 * Any columns in $nowCols will be set to NOW() in the query.
 	 *
@@ -432,6 +454,7 @@ class Paraffin extends \ArrayObject {
 			if (!in_array($key, $nowCols))
 				$sth->bindValue(":$key", $value, $datatype);
 		}
+
 		$res = $sth->execute();
 
 		if ($res && $sth->rowCount() == 1) {
@@ -464,10 +487,29 @@ class Paraffin extends \ArrayObject {
 	}
 
 	/*
+	 * Turn an array of instances into an array of JSON items
+	 *
+	 * @return string
+	 */
+	public static function toJSON($records) {
+		$items = array();
+		foreach($records as $record) {
+			$items[] = $record->toArray();
+		}
+		return json_encode($items);
+	}
+
+	/*
 	 * Empty the table.
 	 */
 	public static function truncate() {
 		static::fixate();
 		static::$dbh->query("TRUNCATE TABLE `" . static::$table . "`");
+	}
+
+	public static function raw($query) {
+		static::fixate();
+		$result = static::$dbh->query($query);
+		return $result->fetchAll();
 	}
 }
