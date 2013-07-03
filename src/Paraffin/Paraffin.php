@@ -424,7 +424,15 @@ class Paraffin extends \ArrayObject {
 	 */
 	public static function create($values, $save=true, $nowCols=array(),
 		$table=null) {
+
 		static::fixate();
+		// Extend the values array to include nowCols if the consuming code
+		// didn't pass it.
+		foreach($nowCols as $nowCol) {
+			if (!in_array($nowCol, array_keys($values))) {
+				$values[$nowCol] = null;
+			}
+		}
 		$values = static::_filterColumns($values);
 		if (!$table)
 			$table = static::$table;
