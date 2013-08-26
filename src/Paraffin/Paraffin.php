@@ -515,9 +515,10 @@ class Paraffin extends \ArrayObject {
 		static::$dbh->query("TRUNCATE TABLE `" . static::$table . "`");
 	}
 
-	public static function raw($query) {
+	public static function raw($query, $data=array()) {
 		static::fixate();
-		$result = static::$dbh->query($query);
-		return $result->fetchAll();
+		$sth = static::$dbh->prepare($query);
+		$result = $sth->execute($data);
+		return $sth->fetchAll();
 	}
 }
