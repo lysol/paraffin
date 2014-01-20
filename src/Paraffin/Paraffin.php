@@ -6,7 +6,7 @@ namespace Paraffin;
  * provide more efficient queries for your logic.
  */
 
-class Paraffin extends \ArrayObject {
+class Paraffin extends \ArrayObject implements \JsonSerializable {
 	/**
 	 * Database table this class will return records for
 	 *
@@ -424,15 +424,7 @@ class Paraffin extends \ArrayObject {
 	 */
 	public static function create($values, $save=true, $nowCols=array(),
 		$table=null) {
-
 		static::fixate();
-		// Extend the values array to include nowCols if the consuming code
-		// didn't pass it.
-		foreach($nowCols as $nowCol) {
-			if (!in_array($nowCol, array_keys($values))) {
-				$values[$nowCol] = null;
-			}
-		}
 		$values = static::_filterColumns($values);
 		if (!$table)
 			$table = static::$table;
@@ -495,16 +487,12 @@ class Paraffin extends \ArrayObject {
 	}
 
 	/*
-	 * Turn an array of instances into an array of JSON items
+	 * Make this serializable with json_encode
 	 *
-	 * @return string
+	 * @return array
 	 */
-	public static function toJSON($records) {
-		$items = array();
-		foreach($records as $record) {
-			$items[] = $record->toArray();
-		}
-		return json_encode($items);
+	public function jsonSerialize() {
+		return $this->toArray();
 	}
 
 	/*
@@ -515,9 +503,25 @@ class Paraffin extends \ArrayObject {
 		static::$dbh->query("TRUNCATE TABLE `" . static::$table . "`");
 	}
 
-	public static function raw($query, $data=array()) {
+	public static function raw($query, $data=array(), $returnStatement=false) {
 		static::fixate();
 		$sth = static::$dbh->prepare($query);
+		$result = $sth->execute($data);
+		if (!$returnStatement) {
+			return $sth->fetchAll();
+		} else {
+			return $sth;
+		}
+	}
+
+	public function query($query) {
+		static::fixate();
+		$sth = static::$dbh->prepare($query);
+		$data = $this->toArray();
+		foreach($data as $key => $v) {
+			$data[':' . $key] = $v;
+			unset($data[$key]);
+		}
 		$result = $sth->execute($data);
 		return $sth->fetchAll();
 	}
