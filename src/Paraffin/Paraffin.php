@@ -1,5 +1,7 @@
 <?php
+
 namespace Paraffin;
+require_once(dirname(__FILE__) . '/SPDOStatement.php');
 
 /**
  * Main Paraffin class. Should not be used directly but subclassed so you can
